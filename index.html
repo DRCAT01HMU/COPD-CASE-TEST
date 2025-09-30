@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trắc Nghiệm Case Lâm Sàng COPD</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8;
+            background-image:
+                radial-gradient(circle at 1px 1px, #d1d9e6 1px, transparent 0);
+            background-size: 25px 25px;
+            color: #1e3a8a;
+        }
+
+        .watermark {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-45deg);
+            font-size: 12vw;
+            font-weight: 900;
+            color: rgba(30, 64, 175, 0.07);
+            z-index: 10;
+            pointer-events: none;
+            user-select: none;
+            white-space: nowrap;
+        }
+
+        #music-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 100;
+            background-color: rgba(255, 255, 255, 0.8);
+            border-radius: 50%;
+            padding: 0.75rem;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            backdrop-filter: blur(5px);
+        }
+
+        /* --- Custom Styles for Medical Theme --- */
+        .case-card {
+            background-color: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(226, 232, 240, 0.7);
+            transition: all 0.3s ease-in-out;
+        }
+
+        .case-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+        }
+
+        .header-gradient {
+            background: linear-gradient(90deg, #3b82f6, #1e40af);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .lung-icon {
+            display: inline-block;
+            animation: pulse 2.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        .option-btn {
+            transition: all 0.2s ease;
+            border: 2px solid transparent;
+        }
+
+        .option-btn:hover:not(:disabled) {
+            transform: translateX(5px);
+            background-color: #dbeafe;
+            border-color: #93c5fd;
+        }
+        
+        .option-btn.selected {
+            background-color: #93c5fd;
+            border-color: #3b82f6;
+            color: #1e3a8a;
+            font-weight: 600;
+        }
+
+        .correct {
+            background-color: #dcfce7 !important;
+            border-color: #4ade80 !important;
+            color: #15803d;
+        }
+
+        .incorrect {
+            background-color: #fee2e2 !important;
+            border-color: #f87171 !important;
+            color: #b91c1c;
+        }
+
+        .explanation {
+            max-height: 0;
+            opacity: 0;
+            overflow: hidden;
+            transition: max-height 0.5s ease-out, opacity 0.5s ease-out, margin-top 0.5s ease-out;
+            border-left: 4px solid #3b82f6;
+        }
+
+        .explanation.show {
+            max-height: 500px;
+            opacity: 1;
+            margin-top: 1rem;
+        }
+
+        .progress-bar-inner {
+            transition: width 0.5s ease-out;
+        }
+        
+        #result-modal {
+            display: none;
+        }
+    </style>
+</head>
+<body class="min-h-screen p-4 sm:p-8">
+
+    <div class="watermark">TEAMDRCAT</div>
+    
+    <button id="music-toggle">
+        <svg id="music-on-icon" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.88 5.88a15 15 0 0121.21 0M9 9v6l-4 3V6l4 3z" />
+        </svg>
+        <svg id="music-off-icon" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-500 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15.586a2 2 0 01-2.828 0L2 14.828a2 2 0 010-2.828L11.172 2a2 2 0 012.828 0L23 11.172a2 2 0 010 2.828L15.586 23a2 2 0 01-2.828 0L2 14.828m11.172-11.172L2 14.828" />
+             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 9v6l-4 3V6l4 3z"/>
+        </svg>
+    </button>
+
+
+    <div class="max-w-4xl mx-auto">
+        <!-- Header -->
+        <header class="text-center mb-10">
+            <h1 class="text-4xl sm:text-5xl font-bold header-gradient uppercase">
+                <span class="lung-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 sm:h-12 sm:w-12 inline-block" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2c-4.97 0-9 4.03-9 9v1.5c0 .83.67 1.5 1.5 1.5h1.42c.49 0 .94-.28 1.16-.72 1.39-2.83 4.3-4.78 7.92-4.78s6.53 1.95 7.92 4.78c.22.44.67.72 1.16.72h1.42c.83 0 1.5-.67 1.5-1.5V11c0-4.97-4.03-9-9-9zm-1.5 13.5c-.83 0-1.5.67-1.5 1.5v3c0 .83.67 1.5 1.5 1.5h3c.83 0 1.5-.67 1.5-1.5v-3c0-.83-.67-1.5-1.5-1.5h-3z"/>
+                    </svg>
+                </span>
+                Case Lâm Sàng COPD
+            </h1>
+        </header>
+
+        <!-- Quiz Container -->
+        <main id="quiz-container" class="space-y-8">
+            <!-- Cases will be injected here by JavaScript -->
+        </main>
+        
+        <!-- Submit Button -->
+        <div class="mt-8 text-center">
+             <button id="submit-btn" class="w-full max-w-xs mx-auto bg-green-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-green-700 transition-transform hover:scale-105 text-xl shadow-lg">Nộp bài</button>
+        </div>
+
+
+        <!-- Footer with Score and Progress -->
+        <footer class="mt-12 p-4 bg-white/70 backdrop-blur-sm rounded-xl shadow-md sticky bottom-4 border z-20">
+            <div class="flex items-center justify-between">
+                <h3 id="progress-text" class="text-xl font-bold text-blue-900">Tiến độ: 0 / 20 câu đã trả lời</h3>
+                <button id="footer-reset-btn" class="hidden bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors">Thử lại</button>
+            </div>
+            <div class="w-full bg-blue-200 rounded-full h-2.5 mt-2">
+                <div id="progress-bar" class="bg-gradient-to-r from-blue-400 to-blue-600 h-2.5 rounded-full progress-bar-inner" style="width: 0%"></div>
+            </div>
+        </footer>
+
+        <div class="text-center mt-10 mb-4">
+             <p class="font-bold text-blue-800 text-sm">Dữ liệu được biên soạn và tổng hợp bởi TEAMDRCAT dựa trên kiến thức chuẩn Y Hà Nội và các Hướng dẫn Y Khoa cập nhật</p>
+        </div>
+    </div>
+    
+    <!-- Result Modal -->
+    <div id="result-modal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-2xl shadow-2xl p-8 text-center max-w-md w-full transform transition-all scale-95 opacity-0 relative" id="result-modal-content">
+            <button id="close-modal-btn" class="absolute top-2 right-4 text-gray-500 hover:text-gray-700 text-3xl font-bold">&times;</button>
+            <h2 class="text-3xl font-bold header-gradient mb-2">Hoàn Thành!</h2>
+            <p class="text-blue-800 mb-4 text-lg">Bạn đã hoàn thành bài trắc nghiệm.</p>
+            <div class="bg-blue-100 rounded-xl p-6 mb-6">
+                <p class="text-xl text-blue-900">Điểm số cuối cùng của bạn:</p>
+                <p class="text-6xl font-bold text-blue-700 my-2" id="final-score">18 / 20</p>
+                <p class="text-lg font-semibold text-blue-800" id="result-message">Kết quả xuất sắc!</p>
+            </div>
+            <button id="modal-retry-btn" class="w-full bg-blue-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-blue-700 transition-transform hover:scale-105">Làm lại bài trắc nghiệm</button>
+        </div>
+    </div>
+
+
+    <script>
+        const quizData = [
+            {
+                caseTitle: "Case 1",
+                caseDescription: "Một bệnh nhân nam 68 tuổi, hút thuốc lá 50 bao-năm, đến khám vì khó thở tăng dần khi gắng sức trong 3 năm qua và ho khạc đờm trắng vào buổi sáng. Hiện tại, ông khó thở sau khi đi bộ khoảng 100 mét trên đường bằng. Khám lâm sàng cho thấy lồng ngực hình thùng, rì rào phế nang giảm, thì thở ra kéo dài. Phổi không nghe ran rít, ran ngáy.",
+                questions: [
+                    {
+                        question: "1. Đâu là bước tiếp theo thích hợp nhất để xác định chẩn đoán?",
+                        options: ["A. Chụp X-quang ngực", "B. Đo chức năng hô hấp", "C. Chụp cắt lớp vi tính lồng ngực độ phân giải cao (HRCT)", "D. Xét nghiệm khí máu động mạch (ABG)"],
+                        answer: "B. Đo chức năng hô hấp",
+                        explanation: "Theo hướng dẫn của GOLD (Global Initiative for Chronic Obstructive Lung Disease), tiêu chuẩn vàng để chẩn đoán xác định COPD là đo chức năng hô hấp, cho thấy tình trạng tắc nghẽn luồng khí không hồi phục hoàn toàn sau test giãn phế quản (FEV1/FVC < 0.70)."
+                    },
+                    {
+                        question: "2. Kết quả đo chức năng hô hấp sau test giãn phế quản cho thấy FEV1/FVC = 0.60 và FEV1 = 65% giá trị dự đoán. Theo GOLD 2023, mức độ tắc nghẽn luồng khí của bệnh nhân là gì?",
+                        options: ["A. GOLD 1: Nhẹ", "B. GOLD 2: Trung bình", "C. GOLD 3: Nặng", "D. GOLD 4: Rất nặng"],
+                        answer: "B. GOLD 2: Trung bình",
+                        explanation: "Phân loại mức độ nặng của tắc nghẽn luồng khí theo GOLD dựa trên chỉ số FEV1 sau test giãn phế quản ở những bệnh nhân có FEV1/FVC < 0.70. Với FEV1 từ 50% đến <80% giá trị dự đoán, bệnh nhân được xếp vào GOLD 2 (trung bình)."
+                    },
+                    {
+                        question: "3. Dựa trên triệu chứng khó thở sau khi đi bộ khoảng 100m, điểm khó thở của bệnh nhân theo thang điểm mMRC (Modified Medical Research Council) là bao nhiêu?",
+                        options: ["A. mMRC 1", "B. mMRC 2", "C. mMRC 3", "D. mMRC 4"],
+                        answer: "C. mMRC 3",
+                        explanation: "Thang điểm mMRC dùng để đánh giá mức độ khó thở. mMRC 3 được định nghĩa là 'Phải dừng lại để thở sau khi đi bộ khoảng 100m hay vài phút trên đường bằng'."
+                    },
+                    {
+                        question: "4. Bệnh nhân báo cáo có một đợt cấp trong năm qua, được điều trị tại nhà và không cần nhập viện. Theo công cụ đánh giá GOLD 2023 ABE, bệnh nhân này thuộc nhóm nào?",
+                        options: ["A. Nhóm A", "B. Nhóm B", "C. Nhóm E", "D. Chưa đủ dữ liệu để phân loại"],
+                        answer: "B. Nhóm B",
+                        explanation: "Theo công cụ GOLD 2023 ABE, bệnh nhân được phân nhóm dựa trên tiền sử đợt cấp và mức độ triệu chứng. Bệnh nhân này có 0-1 đợt cấp trung bình (không nhập viện) và có nhiều triệu chứng (mMRC ≥ 2). Do đó, ông thuộc Nhóm B."
+                    }
+                ]
+            },
+            {
+                caseTitle: "Case 2",
+                caseDescription: "Bệnh nhân nam 70 tuổi, tiền sử COPD GOLD 3, nhóm D, được đưa đến khoa cấp cứu vì khó thở tăng lên đột ngột, ho nhiều hơn và đờm chuyển màu xanh trong 2 ngày. Khám lúc vào viện: bệnh nhân tỉnh, nói từng từ, co kéo cơ hô hấp phụ. Nhịp thở 28 lần/phút, SpO2 86% khi thở khí phòng. Khí máu động mạch: pH 7.30, PaCO2 65 mmHg, PaO2 55 mmHg.",
+                questions: [
+                    {
+                        question: "1. Chẩn đoán phù hợp nhất với tình trạng hiện tại của bệnh nhân là gì?",
+                        options: ["A. Đợt cấp COPD mức độ nhẹ", "B. Đợt cấp COPD có suy hô hấp cấp không đe dọa tính mạng", "C. Đợt cấp COPD có suy hô hấp cấp đe dọa tính mạng", "D. Suy tim mất bù cấp"],
+                        answer: "C. Đợt cấp COPD có suy hô hấp cấp đe dọa tính mạng",
+                        explanation: "Bệnh nhân có các dấu hiệu đe dọa tính mạng theo GOLD: thay đổi ý thức (nói từng từ), co kéo cơ hô hấp phụ, và khí máu cho thấy tình trạng toan hô hấp nặng (pH < 7.35) với tăng PaCO2 và giảm PaO2."
+                    },
+                    {
+                        question: "2. Can thiệp hô hấp nào là phù hợp nhất ngay tại thời điểm này?",
+                        options: ["A. Thở oxy qua gọng kính 4 L/phút", "B. Thông khí nhân tạo không xâm nhập (NIV/BiPAP)", "C. Khí dung Salbutamol với oxy", "D. Đặt nội khí quản và thở máy xâm nhập"],
+                        answer: "B. Thông khí nhân tạo không xâm nhập (NIV/BiPAP)",
+                        explanation: "Thông khí không xâm nhập (NIV) là lựa chọn hàng đầu cho bệnh nhân đợt cấp COPD có suy hô hấp cấp với toan hô hấp (pH 7.25-7.35) và tăng PaCO2. NIV đã được chứng minh làm giảm nhu cầu đặt nội khí quản và tỷ lệ tử vong."
+                    },
+                     {
+                        question: "3. Ngoài các biện pháp hỗ trợ hô hấp, liệu pháp thuốc nào sau đây cần được chỉ định ngay lập tức?",
+                        options: ["A. Corticosteroid đường toàn thân và kháng sinh", "B. Thuốc lợi tiểu quai và aminophylline", "C. Thuốc kháng virus và thuốc long đờm", "D. Heparin trọng lượng phân tử thấp và thuốc chẹn beta"],
+                        answer: "A. Corticosteroid đường toàn thân và kháng sinh",
+                        explanation: "Điều trị nền tảng cho đợt cấp COPD trung bình-nặng nhập viện bao gồm thuốc giãn phế quản tác dụng ngắn, corticosteroid đường toàn thân và kháng sinh nếu có dấu hiệu nhiễm khuẩn (đờm mủ)."
+                    },
+                    {
+                        question: "4. Mục tiêu SpO2 (độ bão hòa oxy mao mạch) cần duy trì cho bệnh nhân này trong quá trình điều trị là bao nhiêu?",
+                        options: ["A. 85-88%", "B. 88-92%", "C. 93-95%", "D. 96-100%"],
+                        answer: "B. 88-92%",
+                        explanation: "Ở bệnh nhân đợt cấp COPD có nguy cơ tăng CO2 máu, mục tiêu SpO2 là 88-92% để đảm bảo đủ oxy cho mô mà không làm ức chế trung tâm hô hấp và làm nặng thêm tình trạng toan hô hấp."
+                    }
+                ]
+            },
+            {
+                caseTitle: "Case 3",
+                caseDescription: "Một bệnh nhân nam 55 tuổi, tiền sử COPD được chẩn đoán cách đây 5 năm, đến tái khám định kỳ. Ông đang dùng Tiotropium (LAMA) 18mcg/ngày. Trong năm qua, ông đã có 3 đợt cấp, một trong số đó phải nhập viện. Ông vẫn cảm thấy khó thở nhiều khi đi lại trong nhà (mMRC = 3). Xét nghiệm công thức máu cho thấy số lượng bạch cầu ái toan (eosinophil) là 350 tế bào/µL.",
+                questions: [
+                    {
+                        question: "1. Dựa trên diễn tiến của bệnh nhân, hướng xử trí tiếp theo trong việc điều trị duy trì là gì?",
+                        options: ["A. Tiếp tục đơn trị liệu LAMA", "B. Chuyển sang phối hợp LABA + LAMA", "C. Thêm roflumilast vào phác đồ", "D. Nâng bậc lên phác đồ ba thuốc LABA + LAMA + ICS"],
+                        answer: "D. Nâng bậc lên phác đồ ba thuốc LABA + LAMA + ICS",
+                        explanation: "Theo GOLD 2023, một bệnh nhân vẫn còn đợt cấp dù đang dùng LAMA nên được nâng bậc. Với số lượng bạch cầu ái toan ≥ 300 tế bào/µL, lựa chọn ưu tiên là phối hợp ba thuốc LABA + LAMA + ICS."
+                    },
+                    {
+                        question: "2. Việc xét nghiệm số lượng bạch cầu ái toan trong máu có ý nghĩa gì trong việc quản lý COPD?",
+                        options: ["A. Chẩn đoán xác định COPD", "B. Tiên lượng nguy cơ tử vong", "C. Hướng dẫn quyết định sử dụng corticosteroid dạng hít (ICS)", "D. Theo dõi đáp ứng với thuốc giãn phế quản"],
+                        answer: "C. Hướng dẫn quyết định sử dụng corticosteroid dạng hít (ICS)",
+                        explanation: "Số lượng bạch cầu ái toan là một dấu ấn sinh học giúp xác định những bệnh nhân COPD có khả năng đáp ứng tốt với ICS. Mức eosinophil ≥ 300 tế bào/µL là một chỉ dấu mạnh mẽ cho việc thêm ICS để giảm nguy cơ đợt cấp."
+                    },
+                     {
+                        question: "3. Bệnh nhân lo ngại về tác dụng phụ của việc sử dụng corticosteroid dạng hít (ICS) kéo dài. Tác dụng phụ nào sau đây là nguy cơ cần được thảo luận nhiều nhất?",
+                        options: ["A. Suy thượng thận", "B. Tăng đường huyết", "C. Viêm phổi", "D. Loãng xương"],
+                        answer: "C. Viêm phổi",
+                        explanation: "Nhiều nghiên cứu lớn đã chỉ ra rằng việc sử dụng ICS ở bệnh nhân COPD có liên quan đến việc tăng nguy cơ viêm phổi. Đây là tác dụng phụ đáng kể và cần được cân nhắc khi kê đơn."
+                    },
+                    {
+                        question: "4. Sau 6 tháng điều trị bằng phác đồ ba thuốc, bệnh nhân không còn đợt cấp nào nhưng vẫn phàn nàn về khó thở (mMRC = 2). Bước tiếp theo nào là hợp lý nhất?",
+                        options: ["A. Ngừng ICS", "B. Xem xét các nguyên nhân gây khó thở khác và tăng cường phục hồi chức năng hô hấp", "C. Thêm Roflumilast", "D. Thêm Azithromycin liều thấp"],
+                        answer: "B. Xem xét các nguyên nhân gây khó thở khác và tăng cường phục hồi chức năng hô hấp",
+                        explanation: "Khi triệu chứng khó thở vẫn còn dai dẳng mặc dù đã tối ưu hóa điều trị bằng thuốc, điều quan trọng là phải xem xét các nguyên nhân khác (bệnh tim mạch đồng mắc, lo âu) và tăng cường các biện pháp không dùng thuốc, đặc biệt là phục hồi chức năng hô hấp."
+                    }
+                ]
+            },
+            {
+                caseTitle: "Case 4",
+                caseDescription: "Một bệnh nhân nam 52 tuổi đến khám vì khó thở và khò khè. Ông có tiền sử dị ứng theo mùa và được chẩn đoán hen phế quản từ thời thơ ấu, nhưng ông cũng hút thuốc 30 bao-năm và gần đây các triệu chứng trở nên dai dẳng hơn. Đo chức năng hô hấp sau test giãn phế quản cho thấy FEV1/FVC = 0.68 và FEV1 cải thiện 15% (tăng 250mL). Công thức máu có bạch cầu ái toan là 450 tế bào/µL.",
+                questions: [
+                    {
+                        question: "1. Chẩn đoán nào mô tả đúng nhất tình trạng của bệnh nhân?",
+                        options: ["A. Hen phế quản đơn thuần", "B. COPD đơn thuần", "C. Chồng lấp Hen - COPD (ACO)", "D. Giãn phế quản"],
+                        answer: "C. Chồng lấp Hen - COPD (ACO)",
+                        explanation: "Bệnh nhân có các đặc điểm của cả hai bệnh: tiền sử hen và dị ứng (gợi ý hen); đồng thời có yếu tố nguy cơ (hút thuốc) và tắc nghẽn luồng khí cố định (gợi ý COPD). Sự kết hợp này được gọi là ACO."
+                    },
+                    {
+                        question: "2. Liệu pháp điều trị ban đầu nào là bắt buộc phải có trong phác đồ của bệnh nhân này?",
+                        options: ["A. Thuốc kháng muscarinic tác dụng kéo dài (LAMA)", "B. Corticosteroid dạng hít (ICS)", "C. Thuốc chủ vận beta-2 tác dụng ngắn (SABA)", "D. Thuốc ức chế leukotriene"],
+                        answer: "B. Corticosteroid dạng hít (ICS)",
+                        explanation: "Do có thành phần hen rõ rệt, bệnh nhân ACO có nguy cơ cao gặp các biến cố nặng nếu chỉ điều trị bằng thuốc giãn phế quản đơn thuần. Do đó, phác đồ điều trị ban đầu cho ACO luôn phải bao gồm một corticosteroid dạng hít (ICS)."
+                    },
+                     {
+                        question: "3. Bệnh nhân được bắt đầu điều trị với phác đồ LABA + ICS. Sau 3 tháng, ông vẫn cảm thấy khó thở khi đi nhanh. Bước tiếp theo trong việc tối ưu hóa điều trị là gì?",
+                        options: ["A. Tăng liều ICS", "B. Thêm thuốc kháng muscarinic tác dụng kéo dài (LAMA)", "C. Thêm Theophylline", "D. Chuyển sang dùng thuốc giãn phế quản đường uống"],
+                        answer: "B. Thêm thuốc kháng muscarinic tác dụng kéo dài (LAMA)",
+                        explanation: "Khi một bệnh nhân ACO đã được điều trị bằng LABA + ICS mà vẫn còn triệu chứng, bước tiếp theo hợp lý là nâng bậc lên phác đồ ba thuốc (triple therapy) bằng cách thêm LAMA để tối ưu hóa việc giãn phế quản."
+                    },
+                    {
+                        question: "4. So với bệnh nhân COPD đơn thuần, bệnh nhân ACO thường có đặc điểm nào sau đây?",
+                        options: ["A. Chất lượng cuộc sống tốt hơn", "B. Ít có các đợt cấp hơn", "C. Suy giảm chức năng phổi nhanh hơn và có nhiều đợt cấp hơn", "D. Đáp ứng kém hơn với corticosteroid dạng hít"],
+                        answer: "C. Suy giảm chức năng phổi nhanh hơn và có nhiều đợt cấp hơn",
+                        explanation: "Các nghiên cứu đã chỉ ra rằng bệnh nhân ACO thường có tiên lượng xấu hơn so với hen hoặc COPD đơn thuần. Họ có xu hướng bị nhiều đợt cấp hơn, chất lượng cuộc sống kém hơn, và chức năng phổi suy giảm nhanh hơn."
+                    }
+                ]
+            },
+            {
+                caseTitle: "Case 5",
+                caseDescription: "Một phụ nữ 72 tuổi, tiền sử tăng huyết áp và đái tháo đường type 2, đến khám vì khó thở tăng dần trong 6 tháng. Bà khó thở khi đi lại trong nhà và phải kê 3 gối để ngủ. Khám lâm sàng: có ran ẩm ở hai đáy phổi, phù hai chi dưới. Bà cũng có tiền sử hút thuốc 20 bao-năm đã ngưng 10 năm trước.",
+                questions: [
+                    {
+                        question: "1. Chẩn đoán phân biệt quan trọng nhất cần được xem xét ở bệnh nhân này là gì?",
+                        options: ["A. Viêm phổi", "B. Thuyên tắc phổi mạn tính", "C. Suy tim sung huyết", "D. Bệnh phổi kẽ"],
+                        answer: "C. Suy tim sung huyết",
+                        explanation: "Các triệu chứng như khó thở khi nằm (orthopnea), ran ẩm ở đáy phổi, và phù ngoại biên là những dấu hiệu rất điển hình của suy tim sung huyết ứ dịch, cần được loại trừ đầu tiên."
+                    },
+                    {
+                        question: "2. Xét nghiệm cận lâm sàng nào hữu ích nhất để phân biệt giữa đợt cấp COPD và suy tim cấp mất bù?",
+                        options: ["A. Nồng độ D-dimer trong máu", "B. Nồng độ NT-proBNP trong huyết thanh", "C. Nồng độ Troponin I trong máu", "D. Số lượng bạch cầu ái toan trong máu"],
+                        answer: "B. Nồng độ NT-proBNP trong huyết thanh",
+                        explanation: "Nồng độ NT-proBNP tăng cao rất nhạy để chẩn đoán suy tim, trong khi giá trị thấp giúp loại trừ suy tim là nguyên nhân chính gây khó thở cấp."
+                    },
+                     {
+                        question: "3. Bệnh nhân được làm siêu âm tim cho thấy chức năng tâm thu thất trái bảo tồn (EF = 55%) nhưng có bằng chứng rối loạn chức năng tâm trương. Đo chức năng hô hấp cho thấy FEV1/FVC = 0.62. Chẩn đoán nào là phù hợp nhất?",
+                        options: ["A. Suy tim với phân suất tống máu bảo tồn (HFpEF)", "B. COPD gây tâm phế mạn", "C. Cả COPD và HFpEF cùng tồn tại", "D. Thuyên tắc phổi"],
+                        answer: "C. Cả COPD và HFpEF cùng tồn tại",
+                        explanation: "Bệnh nhân có bằng chứng rõ ràng của cả hai bệnh lý. Đo chức năng hô hấp xác định COPD. Siêu âm tim xác định chẩn đoán suy tim với phân suất tống máu bảo tồn (HFpEF). Sự tồn tại đồng thời của hai bệnh này rất phổ biến."
+                    },
+                    {
+                        question: "4. Việc điều trị bệnh nhân có cả COPD và suy tim cần thận trọng. Thuốc nào sau đây được coi là an toàn và có lợi cho cả hai tình trạng?",
+                        options: ["A. Thuốc chẹn beta chọn lọc tim", "B. Thuốc chẹn kênh canxi nhóm non-dihydropyridine", "C. Theophylline", "D. Corticosteroid đường uống liều cao kéo dài"],
+                        answer: "A. Thuốc chẹn beta chọn lọc tim",
+                        explanation: "Trái với quan niệm cũ, các thuốc chẹn beta chọn lọc tim (ví dụ: bisoprolol, metoprolol) đã được chứng minh là an toàn ở bệnh nhân COPD ổn định và là nền tảng trong điều trị suy tim để giảm tỷ lệ tử vong."
+                    }
+                ]
+            },
+        ];
+
+        const quizContainer = document.getElementById('quiz-container');
+        const progressTextEl = document.getElementById('progress-text');
+        const progressBarEl = document.getElementById('progress-bar');
+        const resultModal = document.getElementById('result-modal');
+        const resultModalContent = document.getElementById('result-modal-content');
+        const finalScoreEl = document.getElementById('final-score');
+        const resultMessageEl = document.getElementById('result-message');
+        const modalRetryBtn = document.getElementById('modal-retry-btn');
+        const footerResetBtn = document.getElementById('footer-reset-btn');
+        const submitBtn = document.getElementById('submit-btn');
+        const musicToggleBtn = document.getElementById('music-toggle');
+        const musicOnIcon = document.getElementById('music-on-icon');
+        const musicOffIcon = document.getElementById('music-off-icon');
+
+
+        let currentScore = 0;
+        let questionsAnswered = 0;
+        const totalQuestions = quizData.reduce((sum, current) => sum + current.questions.length, 0);
+
+        // Music setup with Tone.js
+        let musicPlaying = false;
+        const synth = new Tone.PolySynth(Tone.Synth, {
+            oscillator: { type: 'sine' },
+            envelope: { attack: 0.005, decay: 0.1, sustain: 0.3, release: 1 },
+            volume: -10
+        }).toDestination();
+
+        const melody = new Tone.Sequence((time, note) => {
+            synth.triggerAttackRelease(note, '8n', time);
+        }, ['C4', 'E4', 'G4', 'B4', 'G4', 'E4'], '2m');
+        
+        Tone.Transport.bpm.value = 80;
+        melody.start(0);
+
+        async function toggleMusic() {
+            if (Tone.context.state !== 'running') {
+                await Tone.start();
+            }
+
+            if (musicPlaying) {
+                Tone.Transport.stop();
+                musicPlaying = false;
+                musicOnIcon.classList.add('hidden');
+                musicOffIcon.classList.remove('hidden');
+            } else {
+                Tone.Transport.start();
+                musicPlaying = true;
+                musicOnIcon.classList.remove('hidden');
+                musicOffIcon.classList.add('hidden');
+            }
+        }
+        
+        musicToggleBtn.addEventListener('click', toggleMusic);
+
+
+        function createQuiz() {
+            quizContainer.innerHTML = '';
+            quizData.forEach((caseData, caseIndex) => {
+                const caseCard = document.createElement('div');
+                caseCard.className = 'case-card rounded-xl shadow-lg p-6 sm:p-8';
+                
+                let questionsHtml = '';
+                caseData.questions.forEach((q, questionIndex) => {
+                    let optionsHtml = '';
+                    q.options.forEach((option, optionIndex) => {
+                        optionsHtml += `<button class="option-btn w-full text-left p-3 my-2 bg-blue-50 rounded-lg text-blue-900 font-medium" data-case="${caseIndex}" data-question="${questionIndex}" data-option="${optionIndex}">${option}</button>`;
+                    });
+
+                    questionsHtml += `
+                        <div class="my-6">
+                            <h4 class="text-lg font-semibold text-blue-900">${q.question}</h4>
+                            <div class="options-container mt-2">${optionsHtml}</div>
+                            <div class="explanation p-4 mt-4 bg-blue-50 rounded-lg">
+                                <p class="font-bold text-blue-800">Giải thích:</p>
+                                <p class="text-blue-900">${q.explanation}</p>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                caseCard.innerHTML = `
+                    <h2 class="text-2xl font-bold text-blue-800 border-b-2 border-blue-200 pb-2">${caseData.caseTitle}</h2>
+                    <p class="mt-4 text-gray-700 leading-relaxed">${caseData.caseDescription}</p>
+                    <div class="questions-wrapper mt-4">${questionsHtml}</div>
+                `;
+                quizContainer.appendChild(caseCard);
+            });
+            addEventListeners();
+        }
+        
+        function addEventListeners() {
+            document.querySelectorAll('.option-btn').forEach(btn => {
+                btn.addEventListener('click', handleOptionClick);
+            });
+            modalRetryBtn.addEventListener('click', resetQuiz);
+            footerResetBtn.addEventListener('click', resetQuiz);
+            submitBtn.addEventListener('click', handleSubmit);
+        }
+
+        function handleOptionClick(event) {
+            const selectedBtn = event.target;
+            const optionsContainer = selectedBtn.closest('.options-container');
+            const allOptionBtns = optionsContainer.querySelectorAll('.option-btn');
+            
+            // Check if a question is being answered for the first time
+            if (!optionsContainer.dataset.answered) {
+                questionsAnswered++;
+                optionsContainer.dataset.answered = "true";
+            }
+            
+            allOptionBtns.forEach(btn => btn.classList.remove('selected'));
+            selectedBtn.classList.add('selected');
+            
+            updateProgress();
+        }
+
+        function updateProgress() {
+            progressTextEl.textContent = `Tiến độ: ${questionsAnswered} / ${totalQuestions} câu đã trả lời`;
+            const progressPercentage = (questionsAnswered / totalQuestions) * 100;
+            progressBarEl.style.width = `${progressPercentage}%`;
+        }
+
+        function handleSubmit() {
+            currentScore = 0;
+            
+            quizData.forEach((caseData, caseIndex) => {
+                caseData.questions.forEach((q, questionIndex) => {
+                    const optionsContainer = document.querySelector(`button[data-case='${caseIndex}'][data-question='${questionIndex}']`).closest('.options-container');
+                    const selectedBtn = optionsContainer.querySelector('.option-btn.selected');
+                    const allOptionBtns = optionsContainer.querySelectorAll('.option-btn');
+
+                    if (selectedBtn) {
+                        if (selectedBtn.textContent === q.answer) {
+                            currentScore++;
+                            selectedBtn.classList.add('correct');
+                        } else {
+                            selectedBtn.classList.add('incorrect');
+                            allOptionBtns.forEach(btn => {
+                                if (btn.textContent === q.answer) {
+                                    btn.classList.add('correct');
+                                }
+                            });
+                        }
+                    } else {
+                        // If no answer selected, still show the correct one
+                         allOptionBtns.forEach(btn => {
+                            if (btn.textContent === q.answer) {
+                                btn.classList.add('correct');
+                            }
+                        });
+                    }
+
+                    // Show explanation for all questions
+                    const explanationEl = optionsContainer.nextElementSibling;
+                    explanationEl.classList.add('show');
+                });
+            });
+
+            // Disable all option buttons
+            document.querySelectorAll('.option-btn').forEach(btn => btn.disabled = true);
+            
+            // Update UI
+    progressTextEl.innerHTML = `Điểm số: <span class="text-green-600">${currentScore}</span> / ${totalQuestions}`;
+    progressBarEl.style.width = `100%`;
+    submitBtn.classList.add('hidden');
+    footerResetBtn.classList.remove('hidden');
+
+    showResults();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+        
+function showResults() {
+    finalScoreEl.textContent = `${currentScore} / ${totalQuestions}`;
+    let message = '';
+    const percentage = (currentScore / totalQuestions) * 100;
+    if (percentage === 100) {
+        message = "Tuyệt vời! Kiến thức của bạn rất vững chắc!";
+    } else if (percentage >= 80) {
+        message = "Kết quả xuất sắc! Bạn đã nắm rất rõ các tình huống.";
+    } else if (percentage >= 50) {
+        message = "Kết quả khá tốt! Cùng ôn lại một chút nhé.";
+    } else {
+        message = "Cần cố gắng hơn! Hãy xem lại các giải thích để củng cố kiến thức.";
+    }
+    resultMessageEl.textContent = message;
+
+    resultModal.style.display = 'flex';
+    setTimeout(() => {
+        resultModalContent.style.transform = 'scale(1)';
+        resultModalContent.style.opacity = '1';
+    }, 100);
+
+    const closeModalBtn = document.getElementById('close-modal-btn');
+    const hideResults = () => {
+        resultModal.style.display = 'none';
+    };
+    closeModalBtn.addEventListener('click', hideResults);
+    resultModal.addEventListener('click', (event) => {
+        if (event.target === resultModal) {
+            hideResults();
+        }
+    });
+}
+
+function resetQuiz() {
+    currentScore = 0;
+            questionsAnswered = 0;
+            
+            progressTextEl.textContent = `Tiến độ: 0 / ${totalQuestions} câu đã trả lời`;
+            progressBarEl.style.width = '0%';
+            
+            submitBtn.classList.remove('hidden');
+            footerResetBtn.classList.add('hidden');
+
+            resultModal.style.display = 'none';
+            resultModalContent.style.transform = 'scale(0.95)';
+            resultModalContent.style.opacity = '0';
+            
+            createQuiz();
+        }
+
+        // Initial load
+        createQuiz();
+    </script>
+
+</body>
+</html>
+
+
